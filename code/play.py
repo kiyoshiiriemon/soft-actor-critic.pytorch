@@ -1,9 +1,12 @@
+import time
 import os
+import glob
 import argparse
 import numpy as np
 import torch
 import gym
 from gym import wrappers
+import pybullet_envs
 
 from model import GaussianPolicy
 from utils import grad_false
@@ -11,13 +14,19 @@ from utils import grad_false
 
 def run():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--env_id', type=str, default='HalfCheetah-v2')
-    parser.add_argument('--log_name', type=str, default='sac-seed0-datetime')
+    parser.add_argument('--env_id', type=str, default='AntBulletEnv-v0')
+    parser.add_argument('--log_name', type=str, default='')
     parser.add_argument('--cuda', action='store_true')
     parser.add_argument('--seed', type=int, default=0)
     args = parser.parse_args()
 
-    log_dir = os.path.join('logs', args.env_id, args.log_name)
+    if args.log_name:
+        log_dir = os.path.join('logs', args.env_id, args.log_name)
+    else:
+        env_dir = os.path.join('logs', args.env_id, '*')
+        dirs = glob.glob(env_dir)
+        log_dir = max(dirs, key=os.path.getctime)
+        print(f'using {log_dir}')
 
     env = gym.make(args.env_id)
     device = torch.device(
@@ -37,15 +46,19 @@ def run():
             _, _, action = policy.sample(state)
         return action.cpu().numpy().reshape(-1)
 
-    state = env.reset()
-    episode_reward = 0.
-    done = False
-    while not done:
-        env.render()
-        action = exploit(state)
-        next_state, reward, done, _ = env.step(action)
-        episode_reward += reward
-        state = next_state
+    env.render()
+    while True:
+        state = env.reset()
+        episode_reward = 0.
+        done = False
+        while not done:
+            env.render()
+            action = exploit(state)
+            next_state, reward, done, _ = env.step(action)
+            episode_reward += reward
+            state = next_state
+        print(f'total reward: {episode_reward}')
+        time.sleep(1)
 
 
 if __name__ == '__main__':

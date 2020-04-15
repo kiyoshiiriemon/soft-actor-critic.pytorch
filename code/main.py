@@ -2,13 +2,14 @@ import os
 import argparse
 from datetime import datetime
 import gym
+import pybullet_envs
 
 from agent import SacAgent
 
 
 def run():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--env_id', type=str, default='HalfCheetah-v2')
+    parser.add_argument('--env_id', type=str, default='AntBulletEnv-v0')
     parser.add_argument('--cuda', action='store_true')
     parser.add_argument('--seed', type=int, default=0)
     args = parser.parse_args()
